@@ -1,5 +1,6 @@
 {
     "type": "submodule",
     "entrypoint": "index.html",
-    "static": "static"
+    "static": "static",
+    "to": "projects"
 }
