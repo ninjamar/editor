@@ -1,2 +1,2 @@
-# ninjamar.github.io
-My personal website
+# Editor
+A text editor
