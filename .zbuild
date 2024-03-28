@@ -1,0 +1,5 @@
+{
+    "type": "submodule",
+    "entrypoint": "index.html",
+    "static": "static"
+}
