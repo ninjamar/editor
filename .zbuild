@@ -1,6 +1,10 @@
 {
-    "type": "submodule",
-    "entrypoint": "index.html",
-    "static": "static",
-    "to": "projects"
+    "to": "projects",
+    "exclude": [
+        ".git",
+        "README.md",
+        "LICENSE",
+        ".zbuild",
+        ".gitignore"
+    ]
 }
