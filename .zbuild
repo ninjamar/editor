@@ -4,7 +4,7 @@
         ".git",
         "README.md",
         "LICENSE",
-        ".build",
+        ".zbuild",
         ".gitignore"
     ]
 }

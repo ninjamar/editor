@@ -16,7 +16,7 @@
     [x] TODO: Preload menu
     [ ] TODO: Big and small text
     [ ] TODO: Document this code
-    [ ] TODO: Spin this code into it's own repo and use git submodules
+    [x] TODO: Spin this code into it's own repo and use git submodules
     [ ] TODO: Multiline selection doesn't work
     [x] TODO: Handle tab key
     [x] TODO: Handle tab deletion
@@ -274,9 +274,12 @@ function toggleStyle(){
         throw new Error("Need 1 or 2 arguments");
     }
     
-    let range = window.getSelection().getRangeAt(0);   
-    let contents = range.extractContents();
+    let range = window.getSelection().getRangeAt(0);
+    // let contents = range.extractContents();
     let newContents;
+
+    let contents = findGreatestParent(range);
+    console.log("contents", contents);
 
     if (contents.firstElementChild){
         let childOptions = createOptionsFromChild(contents.firstElementChild);
@@ -289,10 +292,62 @@ function toggleStyle(){
     
     range.insertNode(newContents);
 }
+function findGreatestParent(range){
+    /* 
+        get contents
+        if contents is not text
+            return cntents
+        if contents is text
+            if the parent has the same text
+                repeat until get highest parent and the parent doesn't have the element class
+
+                return highest parent
+            else
+                return contents
+    */
+    // if we have reselected the text, and it has a style
+    
+    // let text = range.cloneContents(); // range.data != contents.textContent, they aren't always equal
+    // let text = range.commonAncestorContainer.data;
+    let contents = range.extractContents();
+    let text = contents.textContent;
+    debugger;
+    console.log(contents, text);
+    if (range.commonAncestorContainer.parentElement.textContent == text){
+        /*
+            TODO: I used the debugger to make the code work to get here
+            However, it doesn't work
+            I think it has to do with using range.cloneContents and extract contents,
+                and also setting curr to be range.startContainer.parentElement
+                maybe it should be range.commonAncestorContainer
+                or range.commonAncestorContainer.parentElement
+        */
+        // find greatest parent
+        // let curr = range.startContainer.parentElement;
+
+        let curr = range.commonAncestorContainer.parentElement;
+
+        while (curr.parentElement.textContent == text){
+            console.log(curr.parentElement.textContents)
+            curr = curr.parentElement;
+        }
+        console.log("curr", curr)
+        
+        return curr;
+    } else {
+        return contents;
+    }
+    // get parent
+    // if parent has the same text content, repeat
+    // else return
+}
 
 class Editor {
     constructor(element, {useTab = true} = {}){
         this.element = element;
+        // Add the editor class to the editor
+        this.element.classList.add("editor");
+
         this.useTab = useTab;
         
         this.isMenuShown = false;
