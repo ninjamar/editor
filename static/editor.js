@@ -95,251 +95,42 @@ if (document.readyState == "interactive"){
     document.addEventListener("DOMContentLoaded", initializeDependencies);
 }
 
-/**
- * Check object equality
- *
- * @param {object} x
- * @param {object} y
- * @return {boolean}
- */
-function objectEquals(x, y) {
-    // Taken from https://stackoverflow.com/a/16788517/21322342
+function toggleStyle(tag){
+    let option = document.createElement(tag);
+    
+    let selection = window.getSelection();
+    let range = selection.getRangeAt(0);
+    let contentsClone = range.cloneContents();
 
-    if (x === null || x === undefined || y === null || y === undefined) { return x === y; }
-    // after this just checking type of one would be enough
-    if (x.constructor !== y.constructor) { return false; }
-    // if they are functions, they should exactly refer to same one (because of closures)
-    if (x instanceof Function) { return x === y; }
-    // if they are regexps, they should exactly refer to same one (it is hard to better equality check on current ES)
-    if (x instanceof RegExp) { return x === y; }
-    if (x === y || x.valueOf() === y.valueOf()) { return true; }
-    if (Array.isArray(x) && x.length !== y.length) { return false; }
-
-    // if they are dates, they must had equal valueOf
-    if (x instanceof Date) { return false; }
-
-    // if they are strictly equal, they both need to be object at least
-    if (!(x instanceof Object)) { return false; }
-    if (!(y instanceof Object)) { return false; }
-
-    // recursive object equality check
-    var p = Object.keys(x);
-    return Object.keys(y).every(function (i) { return p.indexOf(i) !== -1; }) &&
-        p.every(function (i) { return objectEquals(x[i], y[i]); });
-}
-// TODO: Use a dataclass for this
-/**
- * Create options from default parameters
- * 
- * @typedef {object} Option
- * 
- * @param {object} [{tagName = null, props = {}, name = null, value = null}={}] - The default parameters
- * @return {Option} The created object
- */
-function Option({tagName = null, props = {}, name = null, value = null} = {}){
-    return {
-        tagName: tagName,
-        props : props,
-        css: {
-            name: name,
-            value: value
-        },
-    };
-}
-/**
- * Turn an option into an html element
- *
- * @param {Option} option - The option to compute
- * @param {string} [text] - Optional text
- * @return {HTMLElement} The computed element
- */
-function computeOption(option, text){
-    let element;
-    if (option.tagName){ // If style
-        element = document.createElement(option.tagName);
-    } else {
-        element = document.createElement("SPAN");
-        element.style[option.css.name] = option.css.value;
-    }
-    if (text){
-        element.textContent = text;
-    }
-    return element;
-}
-
-/**
- * Generate a list of options from an element
- *
- * @param {HTMLElement} child - An element to generate options from
- * @return {Array.<Option>} A list of options
- */
-function createOptionsFromChild(child){
-    let ret = [];
-    let curr = child;
-
-    while (curr){
-        ret.push(curr)
-        curr = curr.firstElementChild;
-    }
-    ret = ret.map(x => {
-        // Properties would have to be changed here
-        if (x.style.length > 0){
-            // TODO: Won't work for when there are more than one styles
-            // Get the first style, then get the value for it
-            return Option({ name: x.style[0], value: x.style[x.style[0]]});
-        }
-        return Option({tagName: x.tagName});
-    });
-    return ret;
-}
-/**
- * Toggle an option
- *
- * @param {Array.<Option>} childOptions - An array of options
- * @param {Option} currOption - The option to toggle
- * @return {Array.<Option>}
- */
-function toggleOption(childOptions, currOption){
-
-    // Get a copy of the array
-    if (childOptions.some(x => objectEquals(x, currOption))){
-        childOptions = childOptions.filter(x => !objectEquals(x, currOption));
-    } else {
-        childOptions.push(currOption);
-    }
-    return childOptions;
-
-    // if the option is inside childOptions
-    //  remove it
-    // else
-    //  add it
-}
-/**
- * Recursively compute every option from an array
- *
- * @param {Array.<Option>} options - A list of options
- * @param {string} text - Text of element
- * @return {HTMLElement} 
- */
-function computeAll(options, text){
-    // [a, b, c] -> a.b.c
-    if (options.length > 0){
-        let ret = computeOption(options[0]);
-        let curr = ret;
-        let elem;
-
-        for (let option of options.slice(1)){ // We have already computed the first item
-            elem = computeOption(option);
-            curr = curr.appendChild(elem);    
-        }
-        curr.appendChild(document.createTextNode(text));
-        return ret;
-
-    }
-    return computeOption(Option({tagName: "SPAN"}), text);
-}
-
-/**
- * Toggle a style on an element
- * 
- * This function can be called with either 1 or 2 arguments
- * TODO: Use object destructuring here
- *
- * @param {string} [tagName] - The tag to toggle
- * 
- * @param {string} [rule] - The rule to toggle
- * @param {string} [value] - The value for the rule
- */
-function toggleStyle(){
     /* 
-        Replacement for document exec command
-        if contents.firstElementChild
+        contents = range.extractContents()
+        ancestor = range.commonAncestor;
 
-            For every child of contents.children[0]
-                add element name to array
-
-            If the current style isn't in this array, add it
-            If current style is in this array, remove it
-            Create a new element from this array
-        else
-            Create a new element with only style
     */
+    /* 
+        if the parent doesn't have the same text content,
+        then the parent clearly
+    */
+    if (contentsClone.textContent != range.commonAncestorContainer.textContent){
 
-    let currOption;
+    }
+    
+    /*
+    let option;
     if (arguments.length == 1){
-        currOption = Option({tagName: arguments[0]})
+        option = document.createElement(arguments[0]);
     } else if (arguments.length == 2){
-        currOption = Option({ name: arguments[0], value: arguments[1] })
+        option = document.createElement("SPAN");
+        option.style[arguments[0]] = arguments[1];
     } else {
         throw new Error("Need 1 or 2 arguments");
     }
-    
-    let range = window.getSelection().getRangeAt(0);
-    // let contents = range.extractContents();
-    let newContents;
 
-    let contents = findGreatestParent(range);
-    console.log("contents", contents);
-
-    if (contents.firstElementChild){
-        let childOptions = createOptionsFromChild(contents.firstElementChild);
-        let filteredChildren = toggleOption(childOptions, currOption);
-        newContents = computeAll(filteredChildren, contents.textContent);
-
-    } else {
-        newContents = computeOption(currOption, contents.textContent);
-    }
-    
-    range.insertNode(newContents);
-}
-function findGreatestParent(range){
-    /* 
-        get contents
-        if contents is not text
-            return cntents
-        if contents is text
-            if the parent has the same text
-                repeat until get highest parent and the parent doesn't have the element class
-
-                return highest parent
-            else
-                return contents
+    let selection  = window.getSelection();
+    let range = selection.getRangeAt(0);
+    /*
+        extract contents
     */
-    // if we have reselected the text, and it has a style
-    
-    // let text = range.cloneContents(); // range.data != contents.textContent, they aren't always equal
-    // let text = range.commonAncestorContainer.data;
-    let contents = range.extractContents();
-    let text = contents.textContent;
-    debugger;
-    console.log(contents, text);
-    if (range.commonAncestorContainer.parentElement.textContent == text){
-        /*
-            TODO: I used the debugger to make the code work to get here
-            However, it doesn't work
-            I think it has to do with using range.cloneContents and extract contents,
-                and also setting curr to be range.startContainer.parentElement
-                maybe it should be range.commonAncestorContainer
-                or range.commonAncestorContainer.parentElement
-        */
-        // find greatest parent
-        // let curr = range.startContainer.parentElement;
-
-        let curr = range.commonAncestorContainer.parentElement;
-
-        while (curr.parentElement.textContent == text){
-            console.log(curr.parentElement.textContents)
-            curr = curr.parentElement;
-        }
-        console.log("curr", curr)
-        
-        return curr;
-    } else {
-        return contents;
-    }
-    // get parent
-    // if parent has the same text content, repeat
-    // else return
 }
 
 class Editor {
