@@ -1,50 +1,78 @@
 import { objectEquals } from "./utils.js";
 
-// TODO: Use a dataclass for this
 /**
- * Create options from default parameters
- * 
- * @typedef {object} Option
- * 
- * @param {object} [{tagName = null, props = {}, name = null, value = null}={}] - The default parameters
- * @return {Option} The created object
- */
-export function Option({tagName = null, props = {}, name = null, value = null} = {}){
-    return {
-        tagName: tagName,
-        props : props,
-        css: {
-            name: name,
-            value: value
-        },
-    };
-}
-/**
- * Turn an option into an html element
+ * A class representing options for an element
  *
- * @param {Option} option - The option to compute
- * @param {string} [text] - Optional text
- * @return {HTMLElement} The computed element
+ * @class ElementOptions
  */
-export function computeOption(option, text){
-    let element;
-    if (option.tagName){ // If style
-        element = document.createElement(option.tagName);
-    } else {
-        element = document.createElement("SPAN");
-        element.style[option.css.name] = option.css.value;
+class ElementOptions {
+    /**
+     * Creates an instance of ElementOptions.
+     * @param {string} tagName - The tagname of the element
+     * @param {Object} [attributes={}] -- All of the elements attributes
+     * @memberof ElementOptions
+     */
+    constructor(tagName, attributes = {}){
+        this.tagName = tagName;
+        this.attributes = attributes;
     }
-    if (text){
-        element.textContent = text;
+
+    /**
+     * Check equality with this instance and another options
+     *
+     * @param {ElementOptions} b - The object to compare with this
+     * @return {boolean} The result of the comparison
+     * @memberof ElementOptions
+     */
+    equals(b){
+        return this.tagName == b.tagName &&
+            objectEquals(this.attributes, b.attributes);
     }
-    return element;
+
+    /**
+     * Compute this option to an HTMLElement
+     *
+     * @param {*} [text] - Optional text
+     * @return {HTMLElement} The computed element
+     * @memberof ElementOptions
+     */
+    compute(text){ // optional text
+        let element = document.createElement(this.tagName);
+        for (let [key, value] of Object.entries(this.attributes)){
+            element.setAttribute(key, value);
+        }
+        if (text){
+            element.textContent = text;
+        }
+        return element;
+    }
+}
+
+/**
+ * Like ElementOptions, but just for when we need to use a singular style
+ *
+ * @class StyledElementOptions
+ * @extends {ElementOptions}
+ */
+class StyledElementOptions extends ElementOptions {
+    /**
+     * Creates an instance of StyledElementOptions.
+     * @param {string} name - A CSS rule name
+     * @param {string} value - The value for the CSS rule
+     * @memberof StyledElementOptions
+     */
+    constructor(name, value){
+        super("SPAN", {
+            "style": name + ":" + value + ";"
+        });
+    }
 }
 
 /**
  * Generate a list of options from an element
  *
  * @param {HTMLElement} child - An element to generate options from
- * @return {Array.<Option>} A list of options
+ * @return {Array.<ElementOptions|StyledElementOptions} A list of options
  */
 function createOptionsFromChild(child){
     let ret = [];
@@ -54,30 +82,30 @@ function createOptionsFromChild(child){
         ret.push(curr)
         curr = curr.firstElementChild;
     }
-    ret = ret.map(x => {
+    ret = ret.map(elem => {
         // Properties would have to be changed here
-        if (x.style.length > 0){
+        if (elem.style.length > 0){
             // TODO: Won't work for when there are more than one styles
             // Get the first style, then get the value for it
-            return Option({ name: x.style[0], value: x.style[x.style[0]]});
+            return new StyledElementOptions(elem.style[0], elem.style[elem.style[0]]); // TODO: only handles singular styles
         }
-        return Option({tagName: x.tagName});
+        return new ElementOptions(elem.tagName);
     });
     return ret;
 }
 /**
  * Toggle an option
  *
- * @param {Array.<Option>} childOptions - An array of options
- * @param {Option} currOption - The option to toggle
- * @return {Array.<Option>}
+ * @param {Array.<ElementOptions|StyledElementOptions>} childOptions - An array of options
+ * @param {ElementOptions|StyledElementOptions} currOption - The option to toggle
+ * @return {Array.<ElementOptions|StyledElementOptions>}
  */
 function toggleOption(childOptions, currOption){
     // if currOption is inside child options
     // Array.contains doesn't work for objects
-    if (childOptions.some(x => objectEquals(x, currOption))){
+    if (childOptions.some(x => x.equals(currOption))){
         // Remove all references to the object
-        childOptions = childOptions.filter(x => !objectEquals(x, currOption));
+        childOptions = childOptions.filter(x => !x.equals(currOption));
     } else {
         // Add the current option to the array
         childOptions.push(currOption);
@@ -87,26 +115,24 @@ function toggleOption(childOptions, currOption){
 /**
  * Recursively compute every option from an array
  *
- * @param {Array.<Option>} options - A list of options
+ * @param {Array.<ElementOptions|StyledElementOptions>} options - A list of options
  * @param {string} text - Text of element
  * @return {HTMLElement} 
  */
 function computeAll(options, text){
     // [a, b, c] -> a.b.c
     if (options.length > 0){
-        let ret = computeOption(options[0]);
+        let ret = options[0].compute();
         let curr = ret;
-        let elem;
 
         for (let option of options.slice(1)){ // We have already computed the first item
-            elem = computeOption(option);
-            curr = curr.appendChild(elem);    
+            curr = curr.appendChild(option.compute()); // Add the computed option
         }
         curr.appendChild(document.createTextNode(text));
         return ret;
 
     }
-    return computeOption(Option({tagName: "SPAN"}), text);
+    return new ElementOptions("SPAN").compute(text);
 }
 
 /**
@@ -137,9 +163,9 @@ export function toggleStyle(){
 
     let currOption;
     if (arguments.length == 1){
-        currOption = Option({tagName: arguments[0]})
+        currOption = new ElementOptions(arguments[0]);
     } else if (arguments.length == 2){
-        currOption = Option({ name: arguments[0], value: arguments[1] })
+        currOption = new StyledElementOptions(arguments[0], arguments[1]);
     } else {
         throw new Error("Need 1 or 2 arguments");
     }
@@ -152,10 +178,8 @@ export function toggleStyle(){
         let childOptions = createOptionsFromChild(contents.firstElementChild);
         let filteredChildren = toggleOption(childOptions, currOption);
         newContents = computeAll(filteredChildren, contents.textContent);
-
     } else {
-        newContents = computeOption(currOption, contents.textContent);
+        newContents = currOption.compute(contents.textContent);
     }
-    
     range.insertNode(newContents);
 }
