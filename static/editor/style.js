@@ -1,4 +1,4 @@
-import { objectEquals } from "./utils.js";
+import { objectEquals, attributesToDict } from "./utils.js";
 
 /**
  * A class representing options for an element
@@ -89,7 +89,7 @@ function createOptionsFromChild(child){
             // Get the first style, then get the value for it
             return new StyledElementOptions(elem.style[0], elem.style[elem.style[0]]); // TODO: only handles singular styles
         }
-        return new ElementOptions(elem.tagName);
+        return new ElementOptions(elem.tagName, attributesToDict(elem.attributes));
     });
     return ret;
 }
@@ -206,11 +206,14 @@ export function toggleStyle(first, second){
     let contents = findGreatestParent(range); // Find the greatest element, see #9
 
     let newContents;
-
+    console.log("contents", contents);
     if (contents.firstElementChild){
         let childOptions = createOptionsFromChild(contents.firstElementChild);
+        console.log("child options", childOptions);
         let filteredChildren = toggleOption(childOptions, currOption);
+        console.log("filtered children", filteredChildren);
         newContents = computeAll(filteredChildren, contents.textContent);
+        console.log("new contents", newContents);
     } else {
         newContents = currOption.compute(contents.textContent);
     }
