@@ -117,7 +117,7 @@ function toggleOption(childOptions, currOption){
  *
  * @param {Array.<ElementOptions|StyledElementOptions>} options - A list of options
  * @param {string} text - Text of element
- * @return {HTMLElement} 
+ * @return {HTMLElement|Text} 
  */
 function computeAll(options, text){
     // [a, b, c] -> a.b.c
@@ -132,7 +132,8 @@ function computeAll(options, text){
         return ret;
 
     }
-    return new ElementOptions("SPAN").compute(text);
+    // If there aren't any options, then return a text node
+    return document.createTextNode(text); // 
 }
 
 /**
