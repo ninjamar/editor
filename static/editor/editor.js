@@ -79,6 +79,8 @@ if (document.readyState == "interactive"){
 class Editor {
     constructor(element, {useTab = true} = {}){
         this.element = element;
+        this.element.classList.add("editor"); // Add the editor class for identification
+
         this.useTab = useTab;
         
         this.isMenuShown = false;

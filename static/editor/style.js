@@ -136,6 +136,37 @@ function computeAll(options, text){
 }
 
 /**
+ * Find the greatest parent element for a range
+ *
+ * @param {Range} range - The range
+ * @return {DocumentFragment} The contents from the range
+ */
+function findGreatestParent(range){
+    let ancestor = range.commonAncestorContainer;
+    // If the ancestor's parent is the editor, return the contents
+    if (ancestor.parentElement.classList.contains("editor")){
+        return range.extractContents();
+    }
+
+    let text = range.cloneContents().textContent;
+    // If the parent of the ancestor has the same text
+    if (text == ancestor.parentElement.textContent){
+        let curr = ancestor.parentElement;
+
+        // recusrively check, then return parent in a document fragment
+        while (curr.parentElement.textContent == text){
+            curr = curr.parentElement;
+        }
+        // need toggleStyle expects a document fragment from range.extractContents()
+        let fragment = document.createDocumentFragment();
+        // append child removes the element from the dom, so use range.extractContents()
+        fragment.appendChild(curr);
+        return fragment;
+    } else {
+        return range.extractContents();
+    }
+}
+/**
  * Toggle a style on an element
  * 
  * This function can be called with either 1 or 2 arguments
@@ -170,8 +201,9 @@ export function toggleStyle(){
         throw new Error("Need 1 or 2 arguments");
     }
     
-    let range = window.getSelection().getRangeAt(0);   
-    let contents = range.extractContents();
+    let range = window.getSelection().getRangeAt(0);
+    let contents = findGreatestParent(range); // Find the greatest element, see #9
+
     let newContents;
 
     if (contents.firstElementChild){
