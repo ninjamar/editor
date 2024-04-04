@@ -49,7 +49,7 @@ class ElementOptions {
 }
 
 /**
- * Like ElementOptions, but just for when we need to use a singular style
+ * Like ElementOptions, but just for when we need to use a singular style (for convenience)
  *
  * @class StyledElementOptions
  * @extends {ElementOptions}
@@ -83,12 +83,7 @@ function createOptionsFromChild(child){
         curr = curr.firstElementChild;
     }
     ret = ret.map(elem => {
-        // Properties would have to be changed here
-        if (elem.style.length > 0){
-            // TODO: Won't work for when there are more than one styles
-            // Get the first style, then get the value for it
-            return new StyledElementOptions(elem.style[0], elem.style[elem.style[0]]); // TODO: only handles singular styles
-        }
+        // Styles are inside of attributes
         return new ElementOptions(elem.tagName, attributesToDict(elem.attributes));
     });
     return ret;
