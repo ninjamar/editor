@@ -150,7 +150,7 @@ function findGreatestParent(range){
 
     let text = range.cloneContents().textContent;
     // If the parent of the ancestor has the same text
-    if (text == ancestor.parentElement.textContent){
+    if (ancestor.parentElement.textContent == text){
         let curr = ancestor.parentElement;
 
         // recusrively check, then return parent in a document fragment
