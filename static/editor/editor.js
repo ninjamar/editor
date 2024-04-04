@@ -39,11 +39,11 @@ let menuOptions = {
     `,
     // Set event listeners based on the name attribute
     listeners: {
-        "bold": (() => toggleStyle("B")),
+        "bold": (() => toggleStyle("B", {})),
         "italic": (() => toggleStyle("font-style", "italic")),
         "strikethrough": (() => toggleStyle("text-decoration-line", "line-through")),
         "underline": (() => toggleStyle("text-decoration-line", "underline")),
-        "header-2": (() => toggleStyle("H2"))
+        "header-2": (() => toggleStyle("H2", {})),
     }
 };
 let ICON_URL = new URL("https://unpkg.com/@phosphor-icons/web").href;

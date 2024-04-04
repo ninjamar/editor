@@ -169,17 +169,20 @@ function findGreatestParent(range){
 /**
  * Toggle a style on an element
  * 
- * This function can be called with either 1 or 2 arguments
+ * This function can be called with in the form of (tagName, attributes) or (rule, value) 
  * TODO: Use object destructuring here
  *
  * @param {string} [tagName] - The tag to toggle
+ * @param {string} [attributes] - The attributes for the tag
  * 
  * @param {string} [rule] - The rule to toggle
  * @param {string} [value] - The value for the rule
  */
-export function toggleStyle(){
+export function toggleStyle(first, second){
     /* 
         Replacement for document exec command
+        Get selection
+        Find greatest parent element
         if contents.firstElementChild
 
             For every child of contents.children[0]
@@ -191,16 +194,14 @@ export function toggleStyle(){
         else
             Create a new element with only style
     */
-
-    let currOption;
-    if (arguments.length == 1){
-        currOption = new ElementOptions(arguments[0]);
-    } else if (arguments.length == 2){
-        currOption = new StyledElementOptions(arguments[0], arguments[1]);
-    } else {
-        throw new Error("Need 1 or 2 arguments");
-    }
     
+    let currOption;
+    if (typeof second == 'object'){ // toggleStyle("b", {})
+        currOption = new ElementOptions(first, second);
+    } else { // toggleStyle("font-size", "1.5em")
+        currOption = new StyledElementOptions(first, second);
+    }
+
     let range = window.getSelection().getRangeAt(0);
     let contents = findGreatestParent(range); // Find the greatest element, see #9
 
