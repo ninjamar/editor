@@ -34,6 +34,11 @@ let menuOptions = {
                         <i class="ph ph-text-h-two"></i>
                     </button>
                 </li>
+                <li>
+                    <button name="link">
+                        <i class="ph ph-link"></i>
+                    </button>
+                </li>
             </ul>
         </div>
     `,
@@ -44,6 +49,7 @@ let menuOptions = {
         "strikethrough": (() => toggleStyle("text-decoration-line", "line-through")),
         "underline": (() => toggleStyle("text-decoration-line", "underline")),
         "header-2": (() => toggleStyle("H2", {})),
+        "link": (() => toggleStyle("A", {"href": prompt("URL?")}))
     }
 };
 let ICON_URL = new URL("https://unpkg.com/@phosphor-icons/web").href;
