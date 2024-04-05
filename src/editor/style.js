@@ -1,5 +1,7 @@
 import { objectEquals, attributesToDict } from "./utils.js";
 
+let NOT_UNIQUE = ["SPAN"];
+
 /**
  * A class representing options for an element
  *
@@ -99,6 +101,14 @@ function createOptionsFromChild(child){
 function toggleOption(childOptions, currOption){
     // if currOption is inside child options
     // Array.contains doesn't work for objects
+
+    let tag = currOption.tagName;
+    if (!NOT_UNIQUE.includes(tag)){
+        // Keep all items that don't have the same tag name (exclude elements of the same tag)
+        childOptions = childOptions.filter(x => x.tagName != tag || x.equals(currOption));
+        // tagName is the same and they aren't equal
+    }
+
     if (childOptions.some(x => x.equals(currOption))){
         // Remove all references to the object
         childOptions = childOptions.filter(x => !x.equals(currOption));
@@ -203,14 +213,10 @@ export function toggleStyle(first, second){
     let contents = findGreatestParent(range); // Find the greatest element, see #9
 
     let newContents;
-    console.log("contents", contents);
     if (contents.firstElementChild){
         let childOptions = createOptionsFromChild(contents.firstElementChild);
-        console.log("child options", childOptions);
         let filteredChildren = toggleOption(childOptions, currOption);
-        console.log("filtered children", filteredChildren);
         newContents = computeAll(filteredChildren, contents.textContent);
-        console.log("new contents", newContents);
     } else {
         newContents = currOption.compute(contents.textContent);
     }
