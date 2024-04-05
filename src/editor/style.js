@@ -19,6 +19,7 @@ class ElementOptions {
 
     /**
      * Check equality with this instance and another options
+     * TODO: Allow for less strictness here
      *
      * @param {ElementOptions} b - The object to compare with this
      * @return {boolean} The result of the comparison
