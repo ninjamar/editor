@@ -87,7 +87,7 @@ if (document.readyState == "interactive"){
  *
  * @class Editor
  */
-class Editor {
+export class Editor {
     /**
      * Creates an instance of Editor.
      * @param {HTMLElement} element - The element to put the editor on
@@ -186,5 +186,3 @@ class Editor {
         return true;
     }
 }
-
-export { toggleStyle, Editor };
