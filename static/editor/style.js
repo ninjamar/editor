@@ -139,26 +139,26 @@ function computeAll(options, text){
  */
 function findGreatestParent(range){
     let ancestor = range.commonAncestorContainer;
-    // If the ancestor's parent is the editor, return the contents
-    if (ancestor.parentElement.classList.contains("editor")){
-        return range.extractContents();
-    }
-
     let text = range.cloneContents().textContent;
+
     // If the parent of the ancestor has the same text
     if (ancestor.parentElement.textContent == text){
+        // Store the parent element
         let curr = ancestor.parentElement;
 
-        // recusrively check, then return parent in a document fragment
+        // Recurively check if the parent element of curr has the same text as the range
         while (curr.parentElement.textContent == text){
             curr = curr.parentElement;
         }
-        // need toggleStyle expects a document fragment from range.extractContents()
+
+        // toggleStyle expects a document fragment from range.extractContents()
         let fragment = document.createDocumentFragment();
         // append child removes the element from the dom, so use range.extractContents()
         fragment.appendChild(curr);
+        // Return a document fragment containing curr
         return fragment;
     } else {
+        // If there isn't a parent with the same text, return the extracted contents
         return range.extractContents();
     }
 }
