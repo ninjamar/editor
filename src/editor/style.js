@@ -77,9 +77,9 @@ class StyledElementOptions extends ElementOptions {
  * @param {HTMLElement} child - An element to generate options from
  * @return {Array.<ElementOptions|StyledElementOptions} A list of options
  */
-function createOptionsFromChild(child){
+function createOptionsFromElement(element){
     let ret = [];
-    let curr = child;
+    let curr = element;
 
     while (curr){
         ret.push(curr)
@@ -98,23 +98,23 @@ function createOptionsFromChild(child){
  * @param {ElementOptions|StyledElementOptions} currOption - The option to toggle
  * @return {Array.<ElementOptions|StyledElementOptions>}
  */
-function toggleOption(childOptions, currOption){
+function toggleOption(childOptions, option){
     // if currOption is inside child options
     // Array.contains doesn't work for objects
 
-    let tag = currOption.tagName;
+    let tag = option.tagName;
     if (!NOT_UNIQUE.includes(tag)){
         // Keep all items that don't have the same tag name (exclude elements of the same tag)
-        childOptions = childOptions.filter(x => x.tagName != tag || x.equals(currOption));
+        childOptions = childOptions.filter(x => x.tagName != tag || x.equals(option));
         // tagName is the same and they aren't equal
     }
 
-    if (childOptions.some(x => x.equals(currOption))){
+    if (childOptions.some(x => x.equals(option))){
         // Remove all references to the object
-        childOptions = childOptions.filter(x => !x.equals(currOption));
+        childOptions = childOptions.filter(x => !x.equals(option));
     } else {
         // Add the current option to the array
-        childOptions.push(currOption);
+        childOptions.push(option);
     }
     return childOptions;
 }
@@ -125,7 +125,7 @@ function toggleOption(childOptions, currOption){
  * @param {string} text - Text of element
  * @return {HTMLElement|Text} 
  */
-function computeAll(options, text){
+function computeAllOptions(options, text){
     // [a, b, c] -> a.b.c
     if (options.length > 0){
         let ret = options[0].compute();
@@ -143,12 +143,12 @@ function computeAll(options, text){
 }
 
 /**
- * Find the greatest parent element for a range
+ * Extract the greatest parent element for a range
  *
  * @param {Range} range - The range
  * @return {DocumentFragment} The contents from the range
  */
-function findGreatestParent(range){
+function extractGreatestParent(range){
     let ancestor = range.commonAncestorContainer;
     let text = range.cloneContents().textContent;
 
@@ -185,7 +185,7 @@ function findGreatestParent(range){
  * @param {string} [rule] - The rule to toggle
  * @param {string} [value] - The value for the rule
  */
-export function toggleStyle(first, second){
+function toggleStyle(first, second){
     /* 
         Replacement for document exec command
         Get selection
@@ -210,15 +210,25 @@ export function toggleStyle(first, second){
     }
 
     let range = window.getSelection().getRangeAt(0);
-    let contents = findGreatestParent(range); // Find the greatest element, see #9
-
+    let contents = extractGreatestParent(range); // Find the greatest element, see #9
+    
     let newContents;
     if (contents.firstElementChild){
-        let childOptions = createOptionsFromChild(contents.firstElementChild);
+        let childOptions = createOptionsFromElement(contents.firstElementChild);
         let filteredChildren = toggleOption(childOptions, currOption);
-        newContents = computeAll(filteredChildren, contents.textContent);
+        newContents = computeAllOptions(filteredChildren, contents.textContent);
     } else {
         newContents = currOption.compute(contents.textContent);
     }
     range.insertNode(newContents);
 }
+
+export {
+    toggleStyle, 
+    extractGreatestParent, 
+    createOptionsFromElement, 
+    computeAllOptions, 
+    toggleOption, 
+    ElementOptions, 
+    StyledElementOptions
+};

@@ -3,7 +3,7 @@
     Copyright (c) 2024 ninjamar
     https://github.com/ninjamar/editor
 */
-import { toggleStyle } from "./style.js";
+import { toggleStyle, extractGreatestParent, createOptionsFromElement, computeAllOptions } from "./style.js";
 
 let menuOptions = {
     html: `
@@ -49,7 +49,34 @@ let menuOptions = {
         "strikethrough": (() => toggleStyle("text-decoration-line", "line-through")),
         "underline": (() => toggleStyle("text-decoration-line", "underline")),
         "header-2": (() => toggleStyle("H2", {})),
-        "link": (() => toggleStyle("A", {"href": prompt("URL?")}))
+        "link": (() => {            
+            // Remove the link styling, instead of replacing its with another style
+            let range = window.getSelection().getRangeAt(0);
+            // Extract the greatest parent
+            let contents = extractGreatestParent(range);            
+            // If there is a first element child
+            if (contents.firstElementChild){
+                // Turn the first element child into options
+                let options = createOptionsFromElement(contents.firstElementChild);
+                // If any of the options tag are the same as the A tag (anchor)
+                if (options.some(x => x.tagName == "A")){
+                    // Remove the A tag
+                    options = options.filter(x => x.tagName != "A")
+                    // Add the computed options back;
+                    range.insertNode(computeAllOptions(options, contents.textContent));
+                    // range.insertNode(document.createTextNode(contents.textContent));
+                    return;
+                } else {
+                    // Since there is existing styling, add the styling back
+                    range.insertNode(contents);
+                }
+            } else {
+                // Add the text back
+                range.insertNode(document.createTextNode(contents.textContent));
+            }
+            // Add link styling
+            toggleStyle("A", {"href": prompt("URL?")});
+        })
     }
 };
 let ICON_URL = new URL("https://unpkg.com/@phosphor-icons/web").href;
