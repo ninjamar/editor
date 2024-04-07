@@ -3,7 +3,7 @@
     Copyright (c) 2024 ninjamar
     https://github.com/ninjamar/editor
 */
-import { toggleStyle, extractGreatestParent, createOptionsFromElement, computeAllOptions } from "./style.js";
+import { toggleStyle, styleAction, ElementOptions } from "./style.js";
 
 let menuOptions = {
     html: `
@@ -44,38 +44,33 @@ let menuOptions = {
     `,
     // Set event listeners based on the name attribute
     listeners: {
-        "bold": (() => toggleStyle("B", {})),
-        "italic": (() => toggleStyle("font-style", "italic")),
-        "strikethrough": (() => toggleStyle("text-decoration-line", "line-through")),
-        "underline": (() => toggleStyle("text-decoration-line", "underline")),
-        "header-2": (() => toggleStyle("H2", {})),
-        "link": (() => {            
-            // Remove the link styling, instead of replacing its with another style
-            let range = window.getSelection().getRangeAt(0);
-            // Extract the greatest parent
-            let contents = extractGreatestParent(range);            
-            // If there is a first element child
-            if (contents.firstElementChild){
-                // Turn the first element child into options
-                let options = createOptionsFromElement(contents.firstElementChild);
-                // If any of the options tag are the same as the A tag (anchor)
-                if (options.some(x => x.tagName == "A")){
-                    // Remove the A tag
-                    options = options.filter(x => x.tagName != "A")
-                    // Add the computed options back;
-                    range.insertNode(computeAllOptions(options, contents.textContent));
-                    // range.insertNode(document.createTextNode(contents.textContent));
-                    return;
-                } else {
-                    // Since there is existing styling, add the styling back
-                    range.insertNode(contents);
+        "bold": (() => toggleStyle("E-BOLD")),
+        "italic": (() => toggleStyle("E-ITALIC")),
+        "strikethrough": (() => toggleStyle("E-STRIKETHROUGH")),
+        "underline": (() => toggleStyle("E-UNDERLINE")),
+        "header-2": (() => toggleStyle("H2")),
+        "link": (() => {
+            /*
+                A tags have special behavior
+                When an A tag gets added, it has a required href
+                When the A tag gets toggled, it should remove all A tags, regardless of href
+                Also, only prompt for url if the A tag is going to be added
+            */
+            styleAction(
+                null, // Placeholder option, doesn't get used
+                window.getSelection().getRangeAt(0), // Selection
+                (childOptions, currOption) => { // Callback when there are existing styles
+                    if (childOptions.some(x => x.tagName == "A")){ // If any of the existing styles are A tags
+                        return childOptions.filter(x => x.tagName != "A"); // Then remove all A tags
+                    } else { // Otherwise add A tag
+                        childOptions.push(new ElementOptions("A", {"href": prompt("URL?")}));
+                        return childOptions;
+                    }
+                }, 
+                (option, contents) => { // Callback when there isn't any existing styling
+                    return new ElementOptions("A", {"href": prompt("URL?")}).compute(contents.textContent);
                 }
-            } else {
-                // Add the text back
-                range.insertNode(document.createTextNode(contents.textContent));
-            }
-            // Add link styling
-            toggleStyle("A", {"href": prompt("URL?")});
+            );
         })
     }
 };
