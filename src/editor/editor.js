@@ -136,148 +136,127 @@ export default class Editor {
      * @constructor
      * @param {HTMLElement} element - The element to put the editor on
      * @param {*} [param0={}] - Options
-     * @param {*} [param0.useTab=true] - Whether tabs should be handled
-     * @param {*} [param0.useContextMenu=true] - Is there a context menu?
-     * @param {*} [param0.contextMenu="built-in"] - Contetxt menu options
      */
-    constructor(element, {useTab = true, useContextMenu = true, useCopy = true, contextMenu = "built-in"} = {}){
+    constructor(element, {} = {}){
         this.element = element;
         this.element.classList.add("editor"); // Add the editor class for identification
 
-        this.useTab = useTab;
-        this.useCopy = useCopy;
         this.isMenuShown = false;
-        this.useContextMenu = useContextMenu;
 
         // Initialize the context menu
-        if (this.useContextMenu){
-            this.initializeContextMenu(contextMenu);
-        }
-        this.initialize();
+        this.initializeContextMenu();
+        // Initialize other things
+        this.initializeTweaks();
     }
 
     
     /**
      * Initialize elements
      */
-    initialize(){
+    initializeTweaks(){
+        this.element.addEventListener("copy", (event) => {
+            // Don't automatically copy
+            event.preventDefault();
+            // Get the range
+            let range = window.getSelection().getRangeAt(0);
+            // Extract greatest parent
+            let parent = extractGreatestParent(range);
+            // Create a wrapper, since DocumentFragment doesn't have innerHTML
+            let wrapper = document.createElement("div");
+            // Add a copy of the extracted contents to wrapper
+            wrapper.appendChild(parent.cloneNode(true));
+            // Copy the wrapper's innerHTML
+            event.clipboardData.setData("text/html", wrapper.innerHTML)
+            event.clipboardData.setData("text/plain", wrapper.textContent)
+            // Replace the parent
+            range.insertNode(parent)
+        });
         /*
-        if (this.useTab){
-            this.element.addEventListener("keydown", event => {
-                // https://stackoverflow.com/a/32128448/21322342
-                if (event.key == "Tab"){
+        const handler = (key, element) => {
+            return (event) => {
+                console.log("foo")
+                if (event.key == key){
                     event.preventDefault();
-
+    
                     let sel = window.getSelection();
                     let range = sel.getRangeAt(0);
-
-                    let tabNode = document.createTextNode("\t");
-                    range.insertNode(tabNode);
+                    let clone = element.cloneNode(true);
+                    range.insertNode(clone);
             
-                    range.setStartAfter(tabNode);
-                    range.setEndAfter(tabNode); 
+                    range.setStartAfter(clone);
+                    range.setEndAfter(clone); 
                     sel.removeRange(range);
                     sel.addRange(range);
-
                 }
-            });
-        }*/
-
-        if (this.useCopy){
-            this.element.addEventListener("copy", (event) => {
-                // Don't automatically copy
-                event.preventDefault();
-                // Get the range
-                let range = window.getSelection().getRangeAt(0);
-                // Extract greatest parent
-                let parent = extractGreatestParent(range);
-                // Create a wrapper, since DocumentFragment doesn't have innerHTML
-                let wrapper = document.createElement("div");
-                // Add a copy of the extracted contents to wrapper
-                wrapper.appendChild(parent.cloneNode(true));
-                // Copy the wrapper's innerHTML
-                event.clipboardData.setData("text/html", wrapper.innerHTML)
-                event.clipboardData.setData("text/plain", wrapper.textContent)
-                // Replace the parent
-                range.insertNode(parent)
-            });
+            }
         }
+
+        let span = document.createElement("SPAN");
+        span.contentEditable = false;
+        span.style.display = "block"; // Newline
+        // span.style.width = "1ch";
+        //span.style.height = "0";
+        //span.textContent = "​"; // Zero width space
+        // span.textContent = " ";
+
+        this.element.addEventListener("keydown", handler("Enter", span))*/
     }
 
     /**
      * Initialize context menus
      *
-     * @param {string} [contextMenu="built-in"] - Custom context menu
      */
-    initializeContextMenu(contextMenu = "built-in"){
-        if (contextMenu == "built-in"){
-            this.menu = document.querySelector("#editor-context-menu") || null;
-            // Check if context menu has been loaded
-            if (!document.querySelector("#editor-context-menu")){
-                // Load context menu
-                let div = document.createElement("div");
-                div.innerHTML = menuOptions.html;
-                // Hide the element to prevent DOM flashes
-                div.firstElementChild.style.visibility = "hidden";
-                // Menu is all the way from the top
-                this.menu = document.body.appendChild(div.firstElementChild);
-            }
-        } else {
-            this.menu = contextMenu;
+    initializeContextMenu(){
+        // Check if context menu exists
+        this.menu = document.querySelector("#editor-context-menu") || null;
+        // Check if context menu has been loaded
+        if (!document.querySelector("#editor-context-menu")){
+            // Load context menu
+            let div = document.createElement("div");
+            div.innerHTML = menuOptions.html;
+            // Hide the element to prevent DOM flashes
+            div.firstElementChild.style.visibility = "hidden";
+            // Menu is all the way from the top
+            this.menu = document.body.appendChild(div.firstElementChild);
         }
+
         // Add event listeners to context menu
         for (let type of Object.keys(menuOptions.listeners)){
             this.menu.querySelector(`[name='${type}']`).addEventListener("click", menuOptions.listeners[type]);
         }
+
         // Function to reposition menu
-        let repositionMenu = (cords) => (this.menu.style.top = `calc(${cords.top}px - 2.3em)`) && (this.menu.style.left = `calc(${cords.left}px + (${cords.width}px * 0.5))`);
+        const repositionMenu = (cords) => (this.menu.style.top = `calc(${cords.top}px - 2.3em)`) && (this.menu.style.left = `calc(${cords.left}px + (${cords.width}px * 0.5))`);
+
         // Make context menu hover above text
-        if (contextMenu == "built-in"){
-            document.addEventListener("mouseup", e => {
-                let selection = window.getSelection();
-                if (selection != ""){
-                    let range = selection.getRangeAt(0);
-                    // Make sure that the range is inside the element, this is cleaner than having the event listener on document
-                    if (this.element.contains(range.commonAncestorContainer)){
-                        this.menu.style.visibility = "visible";
-                        this.isMenuShown = true;
-                        window.requestAnimationFrame(() => repositionMenu(range.getBoundingClientRect()));
-                    }
+        document.addEventListener("mouseup", e => {
+            let selection = window.getSelection();
+            if (selection != ""){
+                let range = selection.getRangeAt(0);
+                // Make sure that the range is inside the element, this is cleaner than having the event listener on document
+                if (this.element.contains(range.commonAncestorContainer)){
+                    this.menu.style.visibility = "visible";
+                    this.isMenuShown = true;
+                    window.requestAnimationFrame(() => repositionMenu(range.getBoundingClientRect()));
                 }
-            });
-            // Mouse down for selectiojn
-            document.addEventListener("mousedown", e => {
-                // Only close the menu if it is shown and we aren't hovering over the menu
-                if (this.isMenuShown && !this.menu.contains(document.elementFromPoint(e.clientX, e.clientY))){
-                    this.isMenuShown = false;
-                    this.menu.style.visibility = "hidden";
-                }
-            });
-            // Move the menu on resizesss
-            window.addEventListener("resize", () => {
-                let selection = window.getSelection();
-                if (selection != ""){
-                    window.requestAnimationFrame(() => repositionMenu(selection.getRangeAt(0).getBoundingClientRect()));
-                }
-            });
-        }
-    }
-    
-    /**
-     * Save the state of the editor
-     *
-     * @returns {string} - The save
-     */
-    save(){
-        return btoa(this.element.innerHTML);
-    }
-    
-    /**
-     * Load a save into the editor
-     *
-     * @param {string} data - The save
-     */
-    load(data){
-        this.element.innerHTML = atob(data);
+            }
+        });
+
+        // Mouse down for selectiojn
+        document.addEventListener("mousedown", e => {
+            // Only close the menu if it is shown and we aren't hovering over the menu
+            if (this.isMenuShown && !this.menu.contains(document.elementFromPoint(e.clientX, e.clientY))){
+                this.isMenuShown = false;
+                this.menu.style.visibility = "hidden";
+            }
+        });
+
+        // Move the menu on resizesss
+        window.addEventListener("resize", () => {
+            let selection = window.getSelection();
+            if (selection != ""){
+                window.requestAnimationFrame(() => repositionMenu(selection.getRangeAt(0).getBoundingClientRect()));
+            }
+        });
     }
 }

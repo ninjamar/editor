@@ -6,8 +6,7 @@
 }
 
 .editor {
-    /* white-space: pre-wrap; */
-    cursor: text;
+    cursor: text; /* Sometimes the cursor doesn't show properly */
 }
 
 /* Context menu main  */

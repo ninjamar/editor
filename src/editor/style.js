@@ -44,17 +44,17 @@ export class ElementOptions {
     /**
      * Compute this option to an HTMLElement
      *
-     * @param {*} [text] - Optional text
+     * @param {*} [inner] - Optional innerHTML
      * @return {HTMLElement} The computed element
      * @memberof ElementOptions
      */
-    compute(text){ // optional text
+    compute(inner){ // optional inner
         let element = document.createElement(this.tagName);
         for (let [key, value] of Object.entries(this.attributes)){
             element.setAttribute(key, value);
         }
-        if (text){
-            element.textContent = text;
+        if (inner){
+            element.innerHTML = inner;
         }
         return element;
     }
@@ -197,12 +197,12 @@ export function extractGreatestParent(range){
  */
 function getAllAppliedStyles(element, max = document.body){
     let curr = element;
-    let styles = [curr];
+    let genStyles = [curr];
     while (curr.parentElement && curr.parentElement != max){
         curr = curr.parentElement;
-        styles.push(curr);
+        genStyles.push(curr);
     }
-    return styles;
+    return genStyles;
 }
 
 /** 
@@ -269,7 +269,7 @@ export function styleAction(applied, inverted, range, callback, callback2 = ((o,
         range.insertNode(contents);
         return;
     }
-
+    // debugger;
     let forceInverse;
     // option to disable inverse
     if (checkInverse){
@@ -291,8 +291,13 @@ export function styleAction(applied, inverted, range, callback, callback2 = ((o,
     }
 
     let newContents;
+    /* 
+        TODO
+        Checking the child nodes is a hacky fix
+        I also changed ElementOptions.compute to use innerHTML instead of textContent
+    */
     // If contents has a firstElementChild or forceInverse
-    if (contents.firstElementChild || forceInverse){
+    if (contents.firstElementChild && contents.childNodes.length == 1 || forceInverse){
         // Create Options
         let childOptions = createOptionsFromElement(contents.firstElementChild);
         let filteredChildren;
