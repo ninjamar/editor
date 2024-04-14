@@ -44,7 +44,7 @@ export class ElementOptions {
     /**
      * Compute this option to an HTMLElement
      *
-     * @param {*} [inner] - Optional innerHTML
+     * @param {*} [inner] - Optional html
      * @return {HTMLElement} The computed element
      * @memberof ElementOptions
      */
@@ -133,10 +133,10 @@ export function toggleOption(childOptions, option){
  * Recursively compute every option from an array
  *
  * @param {Array.<ElementOptions>} options - A list of options
- * @param {string} text - Text of element
- * @return {HTMLElement|Text} 
+ * @param {string} inner - innerHTML of element
+ * @return {DocumentFragment} 
  */
-function computeAllOptions(options, text){
+function computeAllOptions(options, inner){
     // [a, b, c] -> a.b.c
     if (options.length > 0){
         let ret = options[0].compute();
@@ -145,12 +145,19 @@ function computeAllOptions(options, text){
         for (let option of options.slice(1)){ // We have already computed the first item
             curr = curr.appendChild(option.compute()); // Add the computed option
         }
-        curr.appendChild(document.createTextNode(text));
+        // curr.appendChild(document.createTextNode(text));
+        curr.innerHTML = inner;
+
+        let fragment = document.createDocumentFragment();
+        fragment.appendChild(ret);
         return ret;
 
     }
     // If there aren't any options, then return a text node
-    return document.createTextNode(text); // 
+    let fragment = document.createDocumentFragment();
+    fragment.innerHTML = inner;
+    return fragment;
+    // return document.createTextNode(text); // 
 }
 
 /**
@@ -259,6 +266,7 @@ export function styleAction(applied, inverted, range, callback, callback2 = ((o,
         else
             Create a new element with only style
     */
+    debugger;
     // Extract greatest parent
     let contents = extractGreatestParent(range);
     // Get all applied styles above text - I can't use contents because extractGreatestParent detaches element from the DOM
@@ -269,7 +277,6 @@ export function styleAction(applied, inverted, range, callback, callback2 = ((o,
         range.insertNode(contents);
         return;
     }
-    // debugger;
     let forceInverse;
     // option to disable inverse
     if (checkInverse){
@@ -296,27 +303,38 @@ export function styleAction(applied, inverted, range, callback, callback2 = ((o,
         Checking the child nodes is a hacky fix
         I also changed ElementOptions.compute to use innerHTML instead of textContent
     */
+    // dont use textContent, use innerHTML
+    // && contents.childNodes.length >= 1
     // If contents has a firstElementChild or forceInverse
-    if (contents.firstElementChild && contents.childNodes.length == 1 || forceInverse){
-        // Create Options
-        let childOptions = createOptionsFromElement(contents.firstElementChild);
-        let filteredChildren;
-        // force inverse
-        if (forceInverse){
-            // Since new styles are at the beginning, callback based on first element
-            if (appliedStyles[0].equals(applied)){
-                // applied -> inverted
-                filteredChildren = callback(childOptions, inverted);
+    if (contents.firstElementChild || forceInverse){
+        if (contents.childNodes.length > 1){
+            // idk how to explain this
+            // but bassicaly there are multiple children
+            let inner = document.createElement('DIV');
+            inner.append(contents);
+            newContents = applied.compute(inner.innerHTML);
+            
+        } else {
+            // Create Options
+            let childOptions = createOptionsFromElement(contents.firstElementChild);
+            let filteredChildren;
+            // force inverse
+            if (forceInverse){
+                // Since new styles are at the beginning, callback based on first element
+                if (appliedStyles[0].equals(applied)){
+                    // applied -> inverted
+                    filteredChildren = callback(childOptions, inverted);
+                } else {
+                    // inverted -> applied
+                    filteredChildren = callback(childOptions, applied);   
+                }
             } else {
-                // inverted -> applied
+                // Proceed normally, using callback with applied
                 filteredChildren = callback(childOptions, applied);   
             }
-        } else {
-            // Proceed normally, using callback with applied
-            filteredChildren = callback(childOptions, applied);   
+            // Compute the options
+            newContents = computeAllOptions(filteredChildren, contents.textContent);
         }
-        // Compute the options
-        newContents = computeAllOptions(filteredChildren, contents.textContent);
     } else {
         // Compute applied style
         newContents = callback2(applied, contents);
