@@ -192,7 +192,7 @@ export class Editor {
                 }
             }
         });
-
+        
         if (this.useCopy){
             this.element.addEventListener("copy", (event) => {
                 // Don't automatically copy
