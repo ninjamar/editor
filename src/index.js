@@ -32,3 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     observer.observe(document.body, config);
 });
+
+function copyHTML() {
+    output.select;
+    document.execCommand("copy");
+}
