@@ -1,3 +1,4 @@
 dist
 benchmark.html
 dev.js
+webpack.config.js
