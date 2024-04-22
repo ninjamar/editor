@@ -10,6 +10,7 @@ let contents = dedent`
 document.addEventListener("DOMContentLoaded", () => {
     let editor = document.querySelector("#editor");
     let output = document.querySelector("#output");
+    let copyHTML = document.querySelector("#copyHTML");
 
     editor.innerHTML = contents;
     let instance = new Editor(editor, {useTab: true});
@@ -31,4 +32,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     observer.observe(document.body, config);
+
+    copyHTML.addEventListener("click", () => {
+        let parser = new DOMParser().parseFromString(output.innerHTML, 'text/html');
+        navigator.clipboard.writeText(parser.documentElement.textContent)
+    });
 });
