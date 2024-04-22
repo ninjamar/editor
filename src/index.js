@@ -1,10 +1,20 @@
 import { Editor } from "./editor/editor.js";
 import dedent from 'https://cdn.jsdelivr.net/npm/dedent@1.5.3/+esm';
 
+/*
 let contents = dedent`
     This div is editable
     Another line
     This <span style="font-style: italic;">word</span> is already italic
+`;
+*/
+let contents = dedent`
+    This is a text editor built using JavaScript.
+    Simply select some text, and the toolbar will appear.
+    The column on the right is a live updating HTML preview
+
+    <a href="https://github.com/ninjamar/editor">GitHub</a>
+    <a href="https://ninjamar.dev/projects/editor">Live demo</a>
 `;
 
 document.addEventListener("DOMContentLoaded", () => {
